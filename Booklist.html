@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Book Website with Login and Search</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      padding-top: 50px;
+    }
+    h2 {
+      margin-top: 30px;
+      text-align: center;
+    }
+    .book-cover {
+      height: 150px;
+      object-fit: cover;
+    }
+    .rating {
+      color: #ffd700; /* Gold color for stars */
+    }
+  </style>
+</head>
+<body>
+  <!-- Login Modal -->
+  <div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="loginModalLabel">Login</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="login-form">
+            <div class="mb-3">
+              <label for="username" class="form-label">Username</label>
+              <input type="text" class="form-control" id="username" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Login</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Navigation Bar -->
+  <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="#">My Book Site</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="#book-list">Book List</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#add-book">Add Book</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#bookmarks">Bookmarks</a>
+          </li>
+          <li class="nav-item">
+            <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#loginModal" id="login-button">Login</button>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Search Bar -->
+  <div class="container mt-4">
+    <input type="text" id="search-bar" class="form-control" placeholder="Search books by title or author" onkeyup="searchBooks()">
+  </div>
+
+  <!-- Main Container -->
+  <div class="container mt-4">
+    <!-- Book List Section -->
+    <section id="book-list">
+      <h2>Book List</h2>
+      <div id="books" class="row"></div>
+    </section>
+
+    <!-- Add Book Section -->
+    <section id="add-book" class="mt-5">
+      <h2>Add a New Book</h2>
+      <form id="book-form">
+        <div class="mb-3">
+          <label for="title" class="form-label">Book Title</label>
+          <input type="text" class="form-control" id="title" required>
+        </div>
+        <div class="mb-3">
+          <label for="author" class="form-label">Author</label>
+          <input type="text" class="form-control" id="author" required>
+        </div>
+        <div class="mb-3">
+          <label for="cover" class="form-label">Book Cover</label>
+          <input type="file" class="form-control" id="cover" accept="image/*" required>
+        </div>
+        <div class="mb-3">
+          <label for="rating" class="form-label">Rating</label>
+          <select class="form-control" id="rating" required>
+            <option value="1">1 Star</option>
+            <option value="2">2 Stars</option>
+            <option value="3">3 Stars</option>
+            <option value="4">4 Stars</option>
+            <option value="5">5 Stars</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label for="review" class="form-label">Review/Description</label>
+          <textarea class="form-control" id="review" rows="3" required></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Add Book</button>
+      </form>
+    </section>
+
+    <!-- Bookmarks Section -->
+    <section id="bookmarks" class="mt-5">
+      <h2>Bookmarks</h2>
+      <ul id="bookmark-list" class="list-group"></ul>
+    </section>
+  </div>
+
+  <!-- Bootstrap JS and JavaScript Logic -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const BOOKS_KEY = 'books';
+    const BOOKMARKS_KEY = 'bookmarks';
+    const USER_KEY = 'loggedInUser';
+    
+    let books = JSON.parse(localStorage.getItem(BOOKS_KEY)) || [];
+    let bookmarks = JSON.parse(localStorage.getItem(BOOKMARKS_KEY)) || [];
+    let loggedInUser = localStorage.getItem(USER_KEY);
+
+    // Display login status
+    if (loggedInUser) {
+      document.getElementById("login-button").textContent = `Logout (${loggedInUser})`;
+    }
+
+    // Handle login
+    document.getElementById('login-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      loggedInUser = document.getElementById('username').value;
+      localStorage.setItem(USER_KEY, loggedInUser);
+      document.getElementById("login-button").textContent = `Logout (${loggedInUser})`;
+      document.getElementById('loginModal').querySelector('.btn-close').click();
+    });
+
+    // Logout function
+    document.getElementById("login-button").addEventListener("click", () => {
+      if (loggedInUser) {
+        loggedInUser = null;
+        localStorage.removeItem(USER_KEY);
+        document.getElementById("login-button").textContent = "Login";
+      }
+    });
+
+    function displayBooks() {
+      const bookContainer = document.getElementById('books');
+      bookContainer.innerHTML = '';
+      books.forEach((book, index) => {
+        const bookDiv = document.createElement('div');
+        bookDiv.classList.add('col-md-4', 'mb-3');
+        bookDiv.innerHTML = `
+          <div class="card">
+            <img src="${book.cover}" class="card-img-top book-cover" alt="${book.title} cover">
+            <div class="card-body">
+              <h5 class="card-title">${book.title}</h5>
+              <p class="card-text">by ${book.author}</p>
+              <p class="rating">${'★'.repeat(book.rating)}${'☆'.repeat(5 - book.rating)}</p>
+              <p class="card-text">${book.review}</p>
+              <button class="btn btn-secondary" onclick="bookmarkBook(${index})">Bookmark</button>
+            </div>
+          </div>
+        `;
+        bookContainer.appendChild(bookDiv);
+      });
+    }
+
+    document.getElementById('book-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (!loggedInUser) {
+        alert("Please login to add a book.");
+        return;
+      }
+      const title = document.getElementById('title').value;
+      const author = document.getElementById('author').value;
+      const cover = document.getElementById('cover').files[0];
+      const rating = document.getElementById('rating').value;
+      const review = document.getElementById('review').value;
+      
+      const reader = new FileReader();
+      reader.readAsDataURL(cover);
+      reader.onload = function(event) {
+        const coverUrl = event.target.result;
+        books.push({ title, author, cover: coverUrl, rating: parseInt(rating), review });
+        localStorage.setItem(BOOKS_KEY, JSON.stringify(books));
+        displayBooks();
+        document.getElementById('book-form').reset();
+      };
+    });
+
+    function bookmarkBook(index) {
+      bookmarks.push(books[index]);
+      localStorage.setItem(BOOKMARKS_KEY, JSON.stringify(bookmarks));
+      displayBookmarks();
+    }
+
+    function displayBookmarks() {
+      const
